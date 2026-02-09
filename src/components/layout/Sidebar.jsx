@@ -46,6 +46,22 @@ export function Sidebar({ active, setActive, walletType, address, connected, can
         >
           CosmWasm Deploy
         </button>
+        <button
+          className={`knavItem ${active === TABS.NFT_DEPLOY ? 'active' : ''}`}
+          onClick={() => setActive(TABS.NFT_DEPLOY)}
+          disabled={!canWasm}
+          title={!canWasm ? 'Cosmostation does not support NFT operations.' : ''}
+        >
+          NFT Deploy
+        </button>
+        <button
+          className={`knavItem ${active === TABS.NFT_MINT ? 'active' : ''}`}
+          onClick={() => setActive(TABS.NFT_MINT)}
+          disabled={!canWasm}
+          title={!canWasm ? 'Cosmostation does not support NFT operations.' : ''}
+        >
+          NFT Mint
+        </button>
       </nav>
 
       <div className="ksideFooter">

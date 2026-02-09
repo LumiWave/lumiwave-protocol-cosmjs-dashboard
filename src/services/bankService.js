@@ -4,14 +4,14 @@ import { coins } from '@cosmjs/stargate';
 import { safeStringify } from '../utils/formatters';
 
 /**
- * 토큰 전송
- * @param {SigningStargateClient} client - Stargate 클라이언트
- * @param {string} fromAddress - 발신자 주소
- * @param {string} toAddress - 수신자 주소
- * @param {string} amount - Base 단위 금액
+ * Send tokens
+ * @param {SigningStargateClient} client - Stargate client
+ * @param {string} fromAddress - Sender address
+ * @param {string} toAddress - Recipient address
+ * @param {string} amount - Amount in base unit
  * @param {string} denom - Denomination
- * @param {string} memo - 메모 (선택)
- * @returns {Promise<Object>} 트랜잭션 결과
+ * @param {string} memo - Memo (optional)
+ * @returns {Promise<Object>} Transaction result
  */
 export async function sendTokens(client, fromAddress, toAddress, amount, denom, memo = '') {
   if (!client) {
@@ -34,7 +34,7 @@ export async function sendTokens(client, fromAddress, toAddress, amount, denom, 
     memo || undefined
   );
 
-  // BigInt가 포함될 수 있으므로 안전하게 처리
+  // Keep return payload BigInt-safe
   return {
     txhash: result.transactionHash,
     height: result.height,

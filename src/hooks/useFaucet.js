@@ -17,7 +17,7 @@ export function useFaucet() {
       setResult(response.message);
 
       if (response.success && onSuccess) {
-        // 잔액 갱신을 위한 딜레이
+        // Delay before refreshing balances
         setTimeout(() => onSuccess(), 1200);
       }
     } catch (error) {

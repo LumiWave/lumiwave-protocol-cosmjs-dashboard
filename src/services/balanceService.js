@@ -1,7 +1,7 @@
 // src/services/balanceService.js
 
 /**
- * 주소의 잔액을 조회
+ * Fetch balances for an address
  */
 export async function fetchBalances(address, restEndpoint) {
   const url = `${restEndpoint}cosmos/bank/v1beta1/balances/${address}`;

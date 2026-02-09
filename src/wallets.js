@@ -39,7 +39,7 @@ export function getAvailableWallets() {
 }
 
 export function walletCapabilities(type) {
-  // 정책: Cosmostation은 Bank Send까지만
+  // Policy: Cosmostation supports only Bank Send in this app
   if (type === WALLET.COSMOSTATION) {
     return {
       canWasm: false,

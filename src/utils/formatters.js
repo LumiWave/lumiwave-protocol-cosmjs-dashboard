@@ -1,7 +1,7 @@
 // src/utils/formatters.js
 
 /**
- * 주소를 짧게 표시 (앞 10자, 뒤 6자)
+ * Shorten address display (first 10, last 6)
  */
 export function shortenAddress(addr) {
   if (!addr) return '-';
@@ -10,7 +10,7 @@ export function shortenAddress(addr) {
 }
 
 /**
- * BigInt를 포함한 객체를 안전하게 JSON.stringify
+ * Safely JSON.stringify objects that may include BigInt
  */
 export function safeStringify(obj, space = 2) {
   return JSON.stringify(
@@ -21,7 +21,7 @@ export function safeStringify(obj, space = 2) {
 }
 
 /**
- * JSON 파싱을 안전하게 수행
+ * Safely parse JSON
  */
 export function safeJsonParse(s) {
   try {
@@ -32,10 +32,10 @@ export function safeJsonParse(s) {
 }
 
 /**
- * Display 금액을 Base 단위로 변환 (LWP -> ulwp)
- * @param {string} displayAmountStr - 표시 단위 금액 (예: "1.5")
- * @param {number} decimals - 소수점 자릿수
- * @returns {string} Base 단위 금액 (예: "1500000")
+ * Convert display amount to base unit (LWP -> ulwp)
+ * @param {string} displayAmountStr - Display unit amount (e.g. "1.5")
+ * @param {number} decimals - Decimal places
+ * @returns {string} Base unit amount (e.g. "1500000")
  */
 export function displayToBaseAmount(displayAmountStr, decimals = 6) {
   const s = (displayAmountStr || '').trim();
@@ -50,16 +50,16 @@ export function displayToBaseAmount(displayAmountStr, decimals = 6) {
 }
 
 /**
- * Base 금액을 Display 단위로 포맷 (ulwp -> LWP)
- * @param {string} amountStr - Base 단위 금액
- * @param {string} denom - 현재 denomination
+ * Format base amount to display unit (ulwp -> LWP)
+ * @param {string} amountStr - Base unit amount
+ * @param {string} denom - Current denomination
  * @param {string} baseDenom - Base denomination
  * @param {string} displayDenom - Display denomination
- * @param {number} decimals - 소수점 자릿수
- * @returns {string} 포맷된 문자열
+ * @param {number} decimals - Decimal places
+ * @returns {string} Formatted string
  */
 export function formatAmount(amountStr, denom, baseDenom, displayDenom, decimals = 6) {
-  // Base denom이 아니면 그대로 반환
+  // Return as-is when denom is not baseDenom
   if (denom !== baseDenom) {
     return `${amountStr}${denom}`;
   }
@@ -78,7 +78,7 @@ export function formatAmount(amountStr, denom, baseDenom, displayDenom, decimals
   const whole = n / scale;
   const frac = n % scale;
 
-  // 소수점 이하 trailing zeros 제거
+  // Remove trailing zeros in fractional part
   const fracStr = frac.toString().padStart(decimals, '0').replace(/0+$/, '');
   const display = fracStr ? `${whole.toString()}.${fracStr}` : whole.toString();
 
@@ -86,7 +86,7 @@ export function formatAmount(amountStr, denom, baseDenom, displayDenom, decimals
 }
 
 /**
- * 여러 잔액을 포맷팅
+ * Format multiple balances
  */
 export function formatBalances(balances, baseDenom, displayDenom, decimals) {
   if (!balances || !balances.length) {

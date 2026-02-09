@@ -15,7 +15,7 @@ export function useWasmDeploy(address) {
   const [instantiateResult, setInstantiateResult] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // initMsg에서 REPLACE_ME를 주소로 자동 치환
+  // Auto-replace REPLACE_ME in initMsg with the connected address
   useState(() => {
     if (address && initMsg.includes('REPLACE_ME')) {
       setInitMsg(initMsg.replace('REPLACE_ME', address));

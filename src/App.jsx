@@ -1,16 +1,18 @@
 // src/App.jsx
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './App.css';
 
 import { walletCapabilities } from './wallets';
 import { TABS, WALLET_STATUS } from './config/constants';
 
 import { useWallet } from './hooks/useWallet';
-import { useBalance } from './hooks/useBalance';
+import { useAllBalances } from './hooks/useAllBalances';
 import { useFaucet } from './hooks/useFaucet';
 import { useBankSend } from './hooks/useBankSend';
 import { useWasmDeploy } from './hooks/useWasmDeploy';
+import { useCW721Deploy } from './hooks/useCW721Deploy';
+import { useNFTMint } from './hooks/useNFTMint';
 
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
@@ -20,6 +22,8 @@ import { QuickActions } from './components/dashboard/QuickActions';
 import { FaucetSection } from './components/faucet/FaucetSection';
 import { BankSendSection } from './components/bank/BankSendSection';
 import { WasmDeploySection } from './components/wasm/WasmDeploySection';
+import { NFTDeploySection } from './components/nft/NFTDeploySection';
+import { NFTMintSection } from './components/nft/NFTMintSection';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState(TABS.DASHBOARD);
@@ -29,9 +33,9 @@ export default function App() {
   const wallet = useWallet();
   const { status, walletType, address, height, stargateClient, wasmClient } = wallet;
 
-  // Balance
-  const balance = useBalance();
-  const { balancesText } = balance;
+  // All Balances (Native + CW20 + NFT)
+  const balances = useAllBalances();
+  const { refreshAllBalances } = balances;
 
   // Faucet
   const faucet = useFaucet();
@@ -39,8 +43,14 @@ export default function App() {
   // Bank Send
   const bankSend = useBankSend();
 
-  // WASM Deploy
+  // WASM Deploy (including CW20)
   const wasmDeploy = useWasmDeploy(address);
+
+  // CW721 Deploy
+  const cw721Deploy = useCW721Deploy(address);
+
+  // NFT Mint
+  const nftMint = useNFTMint();
 
   // Derived states
   const connected = status === WALLET_STATUS.CONNECTED || status === WALLET_STATUS.ADDRESS_COPIED;
@@ -54,24 +64,34 @@ export default function App() {
     status.startsWith('Requesting') ||
     faucet.loading ||
     bankSend.loading ||
-    wasmDeploy.loading;
+    wasmDeploy.loading ||
+    cw721Deploy.loading ||
+    nftMint.loading ||
+    balances.loading;
 
   // Handlers
   const handleConnectWallet = async (type) => {
     setModalOpen(false);
-    await wallet.connect(type);
-    await balance.refreshBalances(wallet.address);
+    const result = await wallet.connect(type);
+    await refreshAllBalances(result.address);
   };
+
+  useEffect(() => {
+    if (!connected || !address) return;
+    refreshAllBalances(address);
+  }, [connected, address, refreshAllBalances]);
 
   const handleRequestFaucet = async () => {
     wallet.setStatus('Requesting faucet...');
-    await faucet.request(address, () => balance.refreshBalances(address));
+    await faucet.request(address, () => balances.refreshAllBalances(address, wasmClient));
     wallet.setStatus(WALLET_STATUS.CONNECTED);
   };
 
   const handleSend = async () => {
     wallet.setStatus('Sending tokens...');
-    await bankSend.send(stargateClient, address, () => balance.refreshBalances(address));
+    await bankSend.send(stargateClient, address, () =>
+      balances.refreshAllBalances(address, wasmClient)
+    );
     wallet.setStatus(WALLET_STATUS.CONNECTED);
   };
 
@@ -91,6 +111,35 @@ export default function App() {
     wallet.setStatus('Instantiating contract...');
     await wasmDeploy.instantiate(wasmClient, address);
     wallet.setStatus(WALLET_STATUS.CONNECTED);
+  };
+
+  const handleUploadCW721 = async () => {
+    if (!canWasm) {
+      throw new Error('Cosmostation does not support NFT operations.');
+    }
+    wallet.setStatus('Uploading CW721 WASM...');
+    await cw721Deploy.upload(wasmClient, address);
+    wallet.setStatus(WALLET_STATUS.CONNECTED);
+  };
+
+  const handleInstantiateCW721 = async () => {
+    if (!canWasm) {
+      throw new Error('Cosmostation does not support NFT operations.');
+    }
+    wallet.setStatus('Deploying NFT collection...');
+    await cw721Deploy.instantiate(wasmClient, address);
+    wallet.setStatus(WALLET_STATUS.CONNECTED);
+  };
+
+  const handleMintNFT = async () => {
+    if (!canWasm) {
+      throw new Error('Cosmostation does not support NFT operations.');
+    }
+    wallet.setStatus('Minting NFT...');
+    await nftMint.mint(wasmClient, address);
+    wallet.setStatus(WALLET_STATUS.CONNECTED);
+    // Refresh NFT collections after minting
+    balances.refreshNFTCollections(wasmClient, address);
   };
 
   return (
@@ -125,7 +174,7 @@ export default function App() {
               walletType={walletType}
               address={address}
               height={height}
-              balancesText={balancesText}
+              balancesText={balances.formattedNativeBalances}
             />
 
             <QuickActions
@@ -133,7 +182,7 @@ export default function App() {
               busy={busy}
               canWasm={canWasm}
               onRequestFaucet={handleRequestFaucet}
-              onRefreshBalances={() => balance.refreshBalances(address)}
+              onRefreshBalances={() => balances.refreshAllBalances(address, wasmClient)}
               setActive={setActiveTab}
               faucetResult={faucet.result}
               sendResult={bankSend.result}
@@ -147,10 +196,10 @@ export default function App() {
           <FaucetSection
             address={address}
             busy={busy}
-            balancesText={balancesText}
+            balancesText={balances.formattedNativeBalances}
             faucetResult={faucet.result}
             onRequestFaucet={handleRequestFaucet}
-            onRefreshBalances={() => balance.refreshBalances(address)}
+            onRefreshBalances={() => balances.refreshAllBalances(address, wasmClient)}
           />
         )}
 
@@ -166,7 +215,7 @@ export default function App() {
             setMemo={bankSend.setMemo}
             sendResult={bankSend.result}
             onSend={handleSend}
-            onRefreshBalances={() => balance.refreshBalances(address)}
+            onRefreshBalances={() => balances.refreshAllBalances(address, wasmClient)}
           />
         )}
 
@@ -189,6 +238,48 @@ export default function App() {
             instantiateResult={wasmDeploy.instantiateResult}
             onUpload={handleUploadWasm}
             onInstantiate={handleInstantiate}
+          />
+        )}
+
+        {activeTab === TABS.NFT_DEPLOY && (
+          <NFTDeploySection
+            address={address}
+            busy={busy}
+            canWasm={canWasm}
+            wasmFile={cw721Deploy.wasmFile}
+            setWasmFile={cw721Deploy.setWasmFile}
+            codeId={cw721Deploy.codeId}
+            setCodeId={cw721Deploy.setCodeId}
+            collectionName={cw721Deploy.collectionName}
+            setCollectionName={cw721Deploy.setCollectionName}
+            symbol={cw721Deploy.symbol}
+            setSymbol={cw721Deploy.setSymbol}
+            minter={cw721Deploy.minter}
+            setMinter={cw721Deploy.setMinter}
+            admin={cw721Deploy.admin}
+            setAdmin={cw721Deploy.setAdmin}
+            uploadResult={cw721Deploy.uploadResult}
+            instantiateResult={cw721Deploy.instantiateResult}
+            onUpload={handleUploadCW721}
+            onInstantiate={handleInstantiateCW721}
+          />
+        )}
+
+        {activeTab === TABS.NFT_MINT && (
+          <NFTMintSection
+            address={address}
+            busy={busy}
+            canWasm={canWasm}
+            contractAddress={nftMint.contractAddress}
+            setContractAddress={nftMint.setContractAddress}
+            tokenId={nftMint.tokenId}
+            setTokenId={nftMint.setTokenId}
+            recipient={nftMint.recipient}
+            setRecipient={nftMint.setRecipient}
+            tokenUri={nftMint.tokenUri}
+            setTokenUri={nftMint.setTokenUri}
+            result={nftMint.result}
+            onMint={handleMintNFT}
           />
         )}
       </main>

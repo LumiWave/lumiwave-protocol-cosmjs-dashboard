@@ -3,9 +3,9 @@
 import { safeStringify } from '../utils/formatters';
 
 /**
- * Faucet 요청
- * @param {string} address - 받을 주소
- * @param {string} faucetApiBase - Faucet API 엔드포인트
+ * Request faucet tokens
+ * @param {string} address - Recipient address
+ * @param {string} faucetApiBase - Faucet API endpoint
  * @returns {Promise<{success: boolean, message: string}>}
  */
 export async function requestFaucet(address, faucetApiBase) {
@@ -34,7 +34,7 @@ export async function requestFaucet(address, faucetApiBase) {
 
   const text = await response.text();
 
-  // Rate limit 처리
+  // Handle rate limiting
   if (response.status === 429) {
     return {
       success: false,

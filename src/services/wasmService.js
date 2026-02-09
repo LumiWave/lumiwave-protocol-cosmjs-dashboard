@@ -3,11 +3,11 @@
 import { safeJsonParse, safeStringify } from '../utils/formatters';
 
 /**
- * WASM 코드 업로드 (Store Code)
- * @param {SigningCosmWasmClient} client - CosmWasm 클라이언트
- * @param {string} senderAddress - 발신자 주소
- * @param {File} wasmFile - WASM 파일
- * @returns {Promise<Object>} 업로드 결과
+ * Upload WASM code (Store Code)
+ * @param {SigningCosmWasmClient} client - CosmWasm client
+ * @param {string} senderAddress - Sender address
+ * @param {File} wasmFile - WASM file
+ * @returns {Promise<Object>} Upload result
  */
 export async function uploadWasm(client, senderAddress, wasmFile) {
   if (!client) {
@@ -29,14 +29,14 @@ export async function uploadWasm(client, senderAddress, wasmFile) {
 }
 
 /**
- * 컨트랙트 인스턴스화
- * @param {SigningCosmWasmClient} client - CosmWasm 클라이언트
- * @param {string} senderAddress - 발신자 주소
+ * Instantiate contract
+ * @param {SigningCosmWasmClient} client - CosmWasm client
+ * @param {string} senderAddress - Sender address
  * @param {number} codeId - Code ID
- * @param {string} label - 레이블
- * @param {string} initMsgJson - 초기화 메시지 JSON
- * @param {string} adminAddress - 관리자 주소 (선택)
- * @returns {Promise<Object>} 인스턴스화 결과
+ * @param {string} label - Label
+ * @param {string} initMsgJson - Init message JSON
+ * @param {string} adminAddress - Admin address (optional)
+ * @returns {Promise<Object>} Instantiation result
  */
 export async function instantiateContract(
   client,

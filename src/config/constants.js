@@ -24,6 +24,8 @@ export const TABS = {
   FAUCET: 'faucet',
   SEND: 'send',
   WASM: 'wasm',
+  NFT_DEPLOY: 'nft-deploy',
+  NFT_MINT: 'nft-mint',
 };
 
 export const WALLET_STATUS = {
