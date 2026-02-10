@@ -13,7 +13,14 @@ export function useFaucet() {
       setLoading(true);
       setResult('');
 
-      const response = await requestFaucet(address, FAUCET_CONFIG.apiPath);
+      const faucetApiBase = (FAUCET_CONFIG.apiPath || '').trim();
+      const isAbsolute = /^https?:\/\//i.test(faucetApiBase);
+      const isRelative = faucetApiBase.startsWith('/');
+      if (!isAbsolute && !isRelative) {
+        throw new Error('VITE_FAUCET_API must be absolute URL or /api path');
+      }
+
+      const response = await requestFaucet(address, faucetApiBase);
       setResult(response.message);
 
       if (response.success && onSuccess) {
