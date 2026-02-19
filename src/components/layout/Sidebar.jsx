@@ -39,6 +39,12 @@ export function Sidebar({ active, setActive, walletType, address, connected, can
           Bank Send
         </button>
         <button
+          className={`knavItem ${active === TABS.TOKEN_FACTORY ? 'active' : ''}`}
+          onClick={() => setActive(TABS.TOKEN_FACTORY)}
+        >
+          Token Factory
+        </button>
+        <button
           className={`knavItem ${active === TABS.WASM ? 'active' : ''}`}
           onClick={() => setActive(TABS.WASM)}
           disabled={!canWasm}

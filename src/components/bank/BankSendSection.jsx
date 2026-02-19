@@ -1,21 +1,27 @@
 // src/components/bank/BankSendSection.jsx
 
 import { shortenAddress } from '../../utils/formatters';
-import { CHAIN_CONFIG } from '../../config/constants';
 
 export function BankSendSection({
   address,
   busy,
+  nativeBalances = [],
   toAddress,
   setToAddress,
   amount,
   setAmount,
+  selectedDenom = '',
+  setSelectedDenom,
+  selectedCoin = { displayDenom: '-', decimals: 0 },
+  coinOptions = [],
   memo,
   setMemo,
   sendResult,
   onSend,
   onRefreshBalances,
 }) {
+  const selectedBalance = nativeBalances.find((balance) => balance.denom === selectedDenom);
+
   return (
     <div className="kgridSingle">
       <section className="kcard">
@@ -35,14 +41,34 @@ export function BankSendSection({
             />
           </div>
 
+          <div style={{ marginTop: 10 }}>
+            <div className="klabel">Token</div>
+            <select
+              className="kinput"
+              value={selectedDenom}
+              onChange={(e) => setSelectedDenom(e.target.value)}
+              disabled={busy}
+            >
+              {coinOptions.map((option) => (
+                <option key={option.denom} value={option.denom}>
+                  {option.displayDenom} ({option.denom})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div className="krow2" style={{ marginTop: 10 }}>
             <div>
-              <div className="klabel">Amount ({CHAIN_CONFIG.displayDenom})</div>
+              <div className="klabel">Amount ({selectedCoin.displayDenom})</div>
               <input
                 className="kinput"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                placeholder={`e.g. 1 (${selectedCoin.decimals} decimals)`}
               />
+              <div className="khelp" style={{ marginTop: 6, marginBottom: 0 }}>
+                Available: {selectedBalance?.amount || '0'} {selectedDenom}
+              </div>
             </div>
             <div>
               <div className="klabel">Memo (optional)</div>

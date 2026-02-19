@@ -1,7 +1,5 @@
 // src/services/cw721Service.js
 
-import { safeJsonParse } from '../utils/formatters';
-
 /**
  * Instantiate a CW721 NFT contract
  * @param {SigningCosmWasmClient} client - CosmWasm client

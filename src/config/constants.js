@@ -12,6 +12,17 @@ export const CHAIN_CONFIG = {
   displayDenom: env.VITE_DENOM_DISPLAY || 'LWP',
   decimals: Number(env.VITE_DECIMALS || '6'),
   gasPrice: env.VITE_GAS_PRICE || '0.025ulwp',
+  tokenFactoryCreateDenomTypeUrl:
+    env.VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL ||
+    '/osmosis.tokenfactory.v1beta1.MsgCreateDenom',
+  tokenFactoryMintTypeUrl:
+    env.VITE_TOKENFACTORY_MINT_TYPE_URL || '/osmosis.tokenfactory.v1beta1.MsgMint',
+  tokenFactorySetMetadataTypeUrl:
+    env.VITE_TOKENFACTORY_SET_METADATA_TYPE_URL ||
+    '/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata',
+  tokenFactorySetMetadataGasMultiplier: Number(
+    env.VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER || '1.8'
+  ),
 };
 
 export const FAUCET_CONFIG = {
@@ -23,6 +34,7 @@ export const TABS = {
   DASHBOARD: 'dashboard',
   FAUCET: 'faucet',
   SEND: 'send',
+  TOKEN_FACTORY: 'token-factory',
   WASM: 'wasm',
   NFT_DEPLOY: 'nft-deploy',
   NFT_MINT: 'nft-mint',

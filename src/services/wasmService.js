@@ -1,6 +1,6 @@
 // src/services/wasmService.js
 
-import { safeJsonParse, safeStringify } from '../utils/formatters';
+import { safeJsonParse } from '../utils/formatters';
 
 /**
  * Upload WASM code (Store Code)

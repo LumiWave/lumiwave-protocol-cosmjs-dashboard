@@ -73,14 +73,12 @@ export function useAllBalances() {
     async (address) => {
       setLoading(true);
       try {
-        await Promise.all([
-          refreshNativeBalances(address),
-        ]);
+        await Promise.all([refreshNativeBalances(address)]);
       } finally {
         setLoading(false);
       }
     },
-    [refreshNativeBalances, refreshCW20Balances, refreshNFTCollections]
+    [refreshNativeBalances]
   );
 
   /**

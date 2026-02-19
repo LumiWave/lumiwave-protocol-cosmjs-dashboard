@@ -1,6 +1,7 @@
 // src/components/layout/TopBar.jsx
 
 import { CHAIN_CONFIG } from '../../config/constants';
+import { Button } from '../ui/Button';
 
 export function TopBar({ status, onConnectWallet, onCopyAddress, address, busy }) {
   return (
@@ -17,12 +18,12 @@ export function TopBar({ status, onConnectWallet, onCopyAddress, address, busy }
           <span>Status</span>
           <b>{status}</b>
         </div>
-        <button className="kbtn primary" onClick={onConnectWallet} disabled={busy}>
+        <Button variant="primary" onClick={onConnectWallet} disabled={busy}>
           Connect Wallet
-        </button>
-        <button className="kbtn" onClick={onCopyAddress} disabled={!address || busy}>
+        </Button>
+        <Button onClick={onCopyAddress} disabled={!address || busy}>
           Copy Address
-        </button>
+        </Button>
       </div>
     </div>
   );

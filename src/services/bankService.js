@@ -1,7 +1,6 @@
 // src/services/bankService.js
 
 import { coins } from '@cosmjs/stargate';
-import { safeStringify } from '../utils/formatters';
 
 /**
  * Send tokens

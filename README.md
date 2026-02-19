@@ -2,7 +2,7 @@
 
 Web dashboard for LumiWave testnet operations, built with React + Vite and CosmJS.
 
-It provides one UI for wallet connection, faucet requests, native transfers, CosmWasm deployment, and CW721 NFT mint flow.
+It provides one UI for wallet connection, faucet requests, native transfers, tokenfactory native coin deployment, CosmWasm deployment, and CW721 NFT mint flow.
 
 ![LumiWave Testnet Dashboard](images/dashboard.png)
 
@@ -14,6 +14,10 @@ It provides one UI for wallet connection, faucet requests, native transfers, Cos
   - Cosmostation: Bank Send only
 - Faucet request (GraphQL endpoint, rate-limit aware)
 - Bank Send (native token transfer)
+- Token Factory (native coin deployment)
+  - Create denom (`MsgCreateDenom`)
+  - Mint supply (`MsgMint`)
+  - Set metadata (`MsgSetDenomMetadata`)
 - CosmWasm Deploy
   - Store Code (`.wasm` upload)
   - Instantiate contract with custom `initMsg` JSON
@@ -37,7 +41,13 @@ npm install
 
 ## Environment Variables
 
-Create `.env` at project root.
+Create `.env` as baseline config, use `.env.local` for local overrides in `npm run dev`, and use `.env.production` for production build.
+
+Priority in dev mode:
+- `.env.local` (highest, local-only)
+- `.env`
+
+### Local Development (`.env`)
 
 ```env
 VITE_CHAIN_ID=lumiwaveprotocol
@@ -55,15 +65,69 @@ VITE_DENOM=ulwp
 VITE_DENOM_DISPLAY=LWP
 VITE_DECIMALS=6
 VITE_GAS_PRICE=0.025ulwp
+VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgCreateDenom
+VITE_TOKENFACTORY_MINT_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgMint
+VITE_TOKENFACTORY_SET_METADATA_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata
+VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER=1.8
 
-# Faucet GraphQL API base path
-# Example: https://your-faucet-host.com/api/faucet
-VITE_FAUCET_API=https://lwp-testnet-faucet.lumiwavelab.com/api/faucet
+# Faucet via Vite proxy
+VITE_FAUCET_API=/api/faucet
+```
+
+### Local Mainnet Override (`.env.local`, for `npm run dev`)
+
+```env
+VITE_CHAIN_ID=lumiwaveprotocol
+VITE_CHAIN_NAME=LumiWave Protocol Mainnet (Local)
+VITE_RPC=http://127.0.0.1:26657
+VITE_REST=http://127.0.0.1:1317/
+VITE_BECH32_PREFIX=lumi
+VITE_DENOM=ulwp
+VITE_DENOM_DISPLAY=LWP
+VITE_DECIMALS=6
+VITE_GAS_PRICE=0.025ulwp
+VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgCreateDenom
+VITE_TOKENFACTORY_MINT_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgMint
+VITE_TOKENFACTORY_SET_METADATA_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata
+VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER=1.8
+VITE_FAUCET_API=/api/faucet
+VITE_FAUCET_PROXY_TARGET=http://127.0.0.1:4500
+VITE_FAUCET_PROXY_REWRITE=/faucet/
+```
+
+### Production (`.env.production`) Example
+
+```env
+VITE_CHAIN_ID=lumiwaveprotocol
+VITE_CHAIN_NAME=LumiWave Protocol Testnet
+VITE_RPC=https://lwp-testnet.lumiwavelab.com/tendermint/
+VITE_REST=https://lwp-testnet.lumiwavelab.com/
+VITE_BECH32_PREFIX=lumi
+VITE_DENOM=ulwp
+VITE_DENOM_DISPLAY=LWP
+VITE_DECIMALS=6
+VITE_GAS_PRICE=0.025ulwp
+VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgCreateDenom
+VITE_TOKENFACTORY_MINT_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgMint
+VITE_TOKENFACTORY_SET_METADATA_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata
+VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER=1.8
+VITE_FAUCET_API=/api/faucet/
 ```
 
 Notes:
 - `VITE_FAUCET_API` is the value actually used for faucet requests.
 - Wallet chain suggestion uses the above chain/token fields directly, so set all of them.
+- Keep trailing slash for `VITE_REST`.
+- `VITE_FAUCET_API` can be absolute URL or relative path.
+- `vite.config.js` proxy can be overridden by `VITE_FAUCET_PROXY_PATH`, `VITE_FAUCET_PROXY_TARGET`, `VITE_FAUCET_PROXY_REWRITE`.
+- If mainnet tokenfactory protobuf package differs, override the three `VITE_TOKENFACTORY_*_TYPE_URL` values.
+
+### Faucet Configuration Modes
+
+- Dev mode (recommended): use `VITE_FAUCET_API=/api/faucet` and Vite proxy in `vite.config.js`.
+- Prod mode:
+  - Option A: serve API under same origin (`/api/faucet`) using reverse proxy.
+  - Option B: set `VITE_FAUCET_API` to absolute faucet endpoint.
 
 ## Run
 
@@ -83,6 +147,16 @@ npm run preview  # preview built app
 npm run lint     # eslint
 ```
 
+## Wallet Support Matrix
+
+| Wallet | Connect | Faucet | Bank Send | CosmWasm Deploy | NFT Deploy/Mint |
+|---|---|---|---|---|---|
+| Keplr | Yes | Yes | Yes | Yes | Yes |
+| Leap | Yes | Yes | Yes | Yes | Yes |
+| Cosmostation | Yes | Yes | Yes | No | No |
+
+Tokenfactory uses Stargate transaction signing and is available for all wallets in this app.
+
 ## Usage
 
 ### 1) Connect Wallet
@@ -93,6 +167,7 @@ npm run lint     # eslint
 
 Cosmostation policy in this app:
 - `Bank Send`: supported
+- `Token Factory`: supported
 - `CosmWasm Deploy`, `NFT Deploy`, `NFT Mint`: disabled
 
 ### 2) Faucet
@@ -119,14 +194,24 @@ Amount is converted to base denom using `VITE_DECIMALS`.
 
 You can deploy CW20 or any compatible CosmWasm contract by providing correct `initMsg`.
 
-### 5) NFT Deploy (CW721)
+### 5) Token Factory (New Native Coin)
+
+1. Open `Token Factory`
+2. Enter `subdenom` and click `Create Denom`
+3. Confirm the created denom (typically `factory/{creator}/{subdenom}`)
+4. Enter amount and recipient, then click `Mint`
+5. Set `Display/Symbol/Decimals` and click `Set Metadata` (for wallet display)
+
+Amount is entered in display denom and converted to base units using `VITE_DECIMALS`.
+
+### 6) NFT Deploy (CW721)
 
 1. Upload CW721 `.wasm`
 2. `Store Code`
 3. Fill `codeId`, `collectionName`, `symbol`, optional `minter` / `admin`
 4. Click `Deploy Collection`
 
-### 6) NFT Mint
+### 7) NFT Mint
 
 1. Enter CW721 collection contract address
 2. Enter `tokenId`
@@ -159,6 +244,26 @@ You can deploy CW20 or any compatible CosmWasm contract by providing correct `in
 - CW20/NFT auto-discovery and aggregated balance panels are scaffolded but not fully wired yet.
 - Only compiled `.wasm` binaries are accepted for Store Code.
 
+## Deployment
+
+1. Build:
+
+```bash
+npm run build
+```
+
+2. Deploy `dist/` to static hosting (Nginx, S3+CloudFront, Vercel, etc.).
+3. If using relative faucet path (`/api/faucet`), configure reverse proxy in the hosting layer.
+
+## Production Checklist
+
+- `VITE_CHAIN_ID`, denom, decimals, bech32 prefix are correct for target chain.
+- `VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL`, `VITE_TOKENFACTORY_MINT_TYPE_URL`, `VITE_TOKENFACTORY_SET_METADATA_TYPE_URL` match your chain protobuf package.
+- `VITE_RPC` and `VITE_REST` are browser-accessible.
+- `VITE_REST` includes trailing slash.
+- Faucet endpoint/proxy is reachable from browser origin.
+- Wallet extension flow (connect/send/store/instantiate) is validated once on target environment.
+
 ## Project Structure
 
 ```text
@@ -184,6 +289,8 @@ src/
       FaucetSection.jsx
     bank/
       BankSendSection.jsx
+    tokenfactory/
+      TokenFactorySection.jsx
     wasm/
       WasmDeploySection.jsx
     nft/
@@ -194,6 +301,7 @@ src/
     useAllBalances.js
     useFaucet.js
     useBankSend.js
+    useTokenFactory.js
     useWasmDeploy.js
     useCW721Deploy.js
     useNFTMint.js
@@ -202,6 +310,8 @@ src/
     balanceService.js
     faucetService.js
     bankService.js
+    tokenFactoryService.js
+    tokenFactoryTypes.js
     wasmService.js
     cw20Service.js
     cw721Service.js

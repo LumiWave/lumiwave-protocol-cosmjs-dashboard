@@ -1,5 +1,34 @@
-export function buildChainInfo(env) {
+export function buildChainInfo(env, options = {}) {
   const prefix = env.VITE_BECH32_PREFIX;
+  const baseCurrency = {
+    coinDenom: env.VITE_DENOM_DISPLAY,
+    coinMinimalDenom: env.VITE_DENOM,
+    coinDecimals: Number(env.VITE_DECIMALS),
+  };
+  const extraCurrencies = Array.isArray(options.extraCurrencies) ? options.extraCurrencies : [];
+  const currencies = [baseCurrency];
+  const minimalDenoms = new Set([String(baseCurrency.coinMinimalDenom)]);
+
+  for (const currency of extraCurrencies) {
+    const minimalDenom = String(currency?.coinMinimalDenom || '').trim();
+    const coinDenom = String(currency?.coinDenom || '').trim();
+    const coinDecimals = Number(currency?.coinDecimals);
+
+    if (!minimalDenom || !coinDenom || !Number.isFinite(coinDecimals) || coinDecimals < 0) {
+      continue;
+    }
+
+    if (minimalDenoms.has(minimalDenom)) {
+      continue;
+    }
+
+    currencies.push({
+      coinDenom,
+      coinMinimalDenom: minimalDenom,
+      coinDecimals: coinDecimals,
+    });
+    minimalDenoms.add(minimalDenom);
+  }
 
   return {
     chainId: env.VITE_CHAIN_ID,
@@ -18,27 +47,11 @@ export function buildChainInfo(env) {
       bech32PrefixConsPub: `${prefix}valconspub`,
     },
 
-    currencies: [
-      {
-        coinDenom: env.VITE_DENOM_DISPLAY,
-        coinMinimalDenom: env.VITE_DENOM,
-        coinDecimals: Number(env.VITE_DECIMALS),
-      },
-    ],
+    currencies,
 
-    feeCurrencies: [
-      {
-        coinDenom: env.VITE_DENOM_DISPLAY,
-        coinMinimalDenom: env.VITE_DENOM,
-        coinDecimals: Number(env.VITE_DECIMALS),
-      },
-    ],
+    feeCurrencies: [baseCurrency],
 
-    stakeCurrency: {
-      coinDenom: env.VITE_DENOM_DISPLAY,
-      coinMinimalDenom: env.VITE_DENOM,
-      coinDecimals: Number(env.VITE_DECIMALS),
-    },
+    stakeCurrency: baseCurrency,
 
     gasPriceStep: { low: 0.01, average: 0.025, high: 0.04 },
 
@@ -60,4 +73,3 @@ export async function connectKeplr(chainInfo) {
 
   return signer;
 }
-

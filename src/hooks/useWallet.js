@@ -1,34 +1,41 @@
 // src/hooks/useWallet.js
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { buildChainInfo } from '../keplr';
 import { initializeWallet } from '../services/walletService';
 import { CHAIN_CONFIG, WALLET_STATUS } from '../config/constants';
+import { readExtraCurrenciesFromStorage } from '../utils/currencies';
 
 export function useWallet() {
   const [status, setStatus] = useState(WALLET_STATUS.DISCONNECTED);
   const [walletType, setWalletType] = useState(null);
   const [address, setAddress] = useState('');
   const [height, setHeight] = useState(null);
-
-  const stargateRef = useRef(null);
-  const wasmRef = useRef(null);
+  const [stargateClient, setStargateClient] = useState(null);
+  const [wasmClient, setWasmClient] = useState(null);
 
   const connect = useCallback(async (wallet) => {
     try {
       setStatus(WALLET_STATUS.CONNECTING);
 
-      const chainInfo = buildChainInfo(import.meta.env);
+      const savedExtraCurrencies = readExtraCurrenciesFromStorage();
+      const chainInfo = buildChainInfo(import.meta.env, {
+        extraCurrencies: savedExtraCurrencies,
+      });
 
       setStatus(WALLET_STATUS.SUGGESTING);
 
-      const result = await initializeWallet(wallet, chainInfo, CHAIN_CONFIG.gasPrice);
+      const result = await initializeWallet(wallet, chainInfo, CHAIN_CONFIG.gasPrice, {
+        createDenomTypeUrl: CHAIN_CONFIG.tokenFactoryCreateDenomTypeUrl,
+        mintTypeUrl: CHAIN_CONFIG.tokenFactoryMintTypeUrl,
+        setMetadataTypeUrl: CHAIN_CONFIG.tokenFactorySetMetadataTypeUrl,
+      });
 
       setWalletType(wallet);
       setAddress(result.address);
       setHeight(result.height);
-      stargateRef.current = result.stargateClient;
-      wasmRef.current = result.wasmClient;
+      setStargateClient(result.stargateClient);
+      setWasmClient(result.wasmClient);
 
       setStatus(WALLET_STATUS.CONNECTED);
 
@@ -44,8 +51,8 @@ export function useWallet() {
     setWalletType(null);
     setAddress('');
     setHeight(null);
-    stargateRef.current = null;
-    wasmRef.current = null;
+    setStargateClient(null);
+    setWasmClient(null);
     setStatus(WALLET_STATUS.DISCONNECTED);
   }, []);
 
@@ -61,8 +68,8 @@ export function useWallet() {
     walletType,
     address,
     height,
-    stargateClient: stargateRef.current,
-    wasmClient: wasmRef.current,
+    stargateClient,
+    wasmClient,
     connect,
     disconnect,
     copyAddress,

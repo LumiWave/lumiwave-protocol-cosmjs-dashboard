@@ -30,6 +30,15 @@ export function QuickActions({
       </div>
 
       <div className="krow2" style={{ marginTop: 10 }}>
+        <button className="kbtn" onClick={() => setActive(TABS.TOKEN_FACTORY)} disabled={!address}>
+          Create Native Coin
+        </button>
+        <button className="kbtn" onClick={onRefreshBalances} disabled={!address || busy}>
+          Refresh Balances
+        </button>
+      </div>
+
+      <div className="krow2" style={{ marginTop: 10 }}>
         <button
           className="kbtn"
           onClick={() => setActive(TABS.WASM)}
@@ -37,9 +46,7 @@ export function QuickActions({
         >
           CosmWasm Deploy
         </button>
-        <button className="kbtn" onClick={onRefreshBalances} disabled={!address || busy}>
-          Refresh Balances
-        </button>
+        <div />
       </div>
 
       {faucetResult && <div className="klog">{faucetResult}</div>}
