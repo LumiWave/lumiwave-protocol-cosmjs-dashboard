@@ -1,18 +1,24 @@
-# LumiWave Protocol Testnet Dashboard
+# LumiWave Protocol Dashboard
 
-Web dashboard for LumiWave testnet operations, built with React + Vite and CosmJS.
+Web dashboard for LumiWave Protocol operations, built with React + Vite and CosmJS. Supports both **Testnet** and **Mainnet** with in-app network switching.
 
 It provides one UI for wallet connection, faucet requests, native transfers, tokenfactory native coin deployment, CosmWasm deployment, and CW721 NFT mint flow.
 
-![LumiWave Testnet Dashboard](images/dashboard.png)
+![LumiWave Dashboard](images/dashboard.png)
 
 ## Features
 
+- **Testnet / Mainnet switching**
+  - In-app network selector (sidebar dropdown)
+  - Wallet auto-disconnects on network switch to prevent stale connections
+  - Selected network persisted in localStorage
+  - Faucet is hidden on Mainnet
 - Wallet connection
   - Keplr: full support
   - Leap: full support
   - Cosmostation: Bank Send only
-- Faucet request (GraphQL endpoint, rate-limit aware)
+  - Auto chain registration via `experimentalSuggestChain`
+- Faucet request (GraphQL endpoint, rate-limit aware) - Testnet only
 - Bank Send (native token transfer)
 - Token Factory (native coin deployment)
   - Create denom (`MsgCreateDenom`)
@@ -39,6 +45,19 @@ It provides one UI for wallet connection, faucet requests, native transfers, tok
 npm install
 ```
 
+## Network Endpoints
+
+The dashboard has built-in network configurations for both Testnet and Mainnet. Users can switch between them using the dropdown in the sidebar.
+
+| | Testnet | Mainnet |
+|---|---|---|
+| RPC | `https://lwp-testnet.lumiwavelab.com/tendermint/` | `https://lwp-mainnet-rpc.lumiwavelab.com` |
+| REST/API | `https://lwp-testnet.lumiwavelab.com/` | `https://lwp-mainnet-api.lumiwavelab.com` |
+| gRPC | - | `lwp-mainnet-grpc.lumiwavelab.com` (SSL) |
+| Faucet | Available | Not available |
+
+Network configurations are defined in `src/config/networks.js`. The `.env` file is used for testnet defaults and faucet proxy settings.
+
 ## Environment Variables
 
 Create `.env` as baseline config, use `.env.local` for local overrides in `npm run dev`, and use `.env.production` for production build.
@@ -53,7 +72,7 @@ Priority in dev mode:
 VITE_CHAIN_ID=lumiwaveprotocol
 VITE_CHAIN_NAME=LumiWave Protocol Testnet
 
-# Endpoints
+# Endpoints (used as testnet defaults)
 # RPC: browser-accessible CometBFT JSON-RPC
 VITE_RPC=https://lwp-testnet.lumiwavelab.com/tendermint/
 # REST: must include trailing slash (used for direct path concatenation)
@@ -70,29 +89,8 @@ VITE_TOKENFACTORY_MINT_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgMint
 VITE_TOKENFACTORY_SET_METADATA_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata
 VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER=1.8
 
-# Faucet via Vite proxy
+# Faucet via Vite proxy (testnet only)
 VITE_FAUCET_API=/api/faucet
-```
-
-### Local Mainnet Override (`.env.local`, for `npm run dev`)
-
-```env
-VITE_CHAIN_ID=lumiwaveprotocol
-VITE_CHAIN_NAME=LumiWave Protocol Mainnet (Local)
-VITE_RPC=http://127.0.0.1:26657
-VITE_REST=http://127.0.0.1:1317/
-VITE_BECH32_PREFIX=lumi
-VITE_DENOM=ulwp
-VITE_DENOM_DISPLAY=LWP
-VITE_DECIMALS=6
-VITE_GAS_PRICE=0.025ulwp
-VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgCreateDenom
-VITE_TOKENFACTORY_MINT_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgMint
-VITE_TOKENFACTORY_SET_METADATA_TYPE_URL=/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata
-VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER=1.8
-VITE_FAUCET_API=/api/faucet
-VITE_FAUCET_PROXY_TARGET=http://127.0.0.1:4500
-VITE_FAUCET_PROXY_REWRITE=/faucet/
 ```
 
 ### Production (`.env.production`) Example
@@ -115,12 +113,13 @@ VITE_FAUCET_API=/api/faucet/
 ```
 
 Notes:
-- `VITE_FAUCET_API` is the value actually used for faucet requests.
+- `.env` values are used as testnet defaults. Mainnet endpoints are hardcoded in `src/config/networks.js`.
+- `VITE_FAUCET_API` is the value actually used for faucet requests (testnet only).
 - Wallet chain suggestion uses the above chain/token fields directly, so set all of them.
 - Keep trailing slash for `VITE_REST`.
 - `VITE_FAUCET_API` can be absolute URL or relative path.
 - `vite.config.js` proxy can be overridden by `VITE_FAUCET_PROXY_PATH`, `VITE_FAUCET_PROXY_TARGET`, `VITE_FAUCET_PROXY_REWRITE`.
-- If mainnet tokenfactory protobuf package differs, override the three `VITE_TOKENFACTORY_*_TYPE_URL` values.
+- If mainnet tokenfactory protobuf package differs, update `MAINNET_CONFIG` in `src/config/networks.js`.
 
 ### Faucet Configuration Modes
 
@@ -159,24 +158,32 @@ Tokenfactory uses Stargate transaction signing and is available for all wallets 
 
 ## Usage
 
-### 1) Connect Wallet
+### 1) Switch Network
+
+1. Use the dropdown in the sidebar to select **Testnet** or **Mainnet**
+2. Wallet disconnects automatically on switch
+3. Selected network is saved and persisted across page reloads
+4. Faucet is only available on Testnet
+
+### 2) Connect Wallet
 
 1. Click `Connect Wallet`
 2. Select Keplr / Leap / Cosmostation
-3. On success, address, block height, and balances appear in Dashboard
+3. The chain is auto-registered in your wallet via `experimentalSuggestChain`
+4. On success, address, block height, and balances appear in Dashboard
 
 Cosmostation policy in this app:
 - `Bank Send`: supported
 - `Token Factory`: supported
 - `CosmWasm Deploy`, `NFT Deploy`, `NFT Mint`: disabled
 
-### 2) Faucet
+### 3) Faucet (Testnet only)
 
 1. Open `Faucet`
 2. Click `Request Faucet`
 3. If rate-limited, the UI shows a friendly message (`429` handling)
 
-### 3) Bank Send
+### 4) Bank Send
 
 1. Enter recipient bech32 address (e.g. `lumi1...`)
 2. Enter amount in display denom (e.g. `LWP`)
@@ -185,7 +192,7 @@ Cosmostation policy in this app:
 
 Amount is converted to base denom using `VITE_DECIMALS`.
 
-### 4) CosmWasm Deploy
+### 5) CosmWasm Deploy
 
 1. Upload compiled `.wasm`
 2. Click `Store Code` to get `codeId`
@@ -194,7 +201,7 @@ Amount is converted to base denom using `VITE_DECIMALS`.
 
 You can deploy CW20 or any compatible CosmWasm contract by providing correct `initMsg`.
 
-### 5) Token Factory (New Native Coin)
+### 6) Token Factory (New Native Coin)
 
 1. Open `Token Factory`
 2. Enter `subdenom` and click `Create Denom`
@@ -204,14 +211,14 @@ You can deploy CW20 or any compatible CosmWasm contract by providing correct `in
 
 Amount is entered in display denom and converted to base units using `VITE_DECIMALS`.
 
-### 6) NFT Deploy (CW721)
+### 7) NFT Deploy (CW721)
 
 1. Upload CW721 `.wasm`
 2. `Store Code`
 3. Fill `codeId`, `collectionName`, `symbol`, optional `minter` / `admin`
 4. Click `Deploy Collection`
 
-### 7) NFT Mint
+### 8) NFT Mint
 
 1. Enter CW721 collection contract address
 2. Enter `tokenId`
@@ -263,6 +270,7 @@ npm run build
 - `VITE_REST` includes trailing slash.
 - Faucet endpoint/proxy is reachable from browser origin.
 - Wallet extension flow (connect/send/store/instantiate) is validated once on target environment.
+- Mainnet endpoints in `src/config/networks.js` are correct and accessible.
 
 ## Project Structure
 
@@ -276,6 +284,8 @@ src/
   wallets.js
   config/
     constants.js
+    networks.js          # Testnet/Mainnet endpoint definitions
+    NetworkContext.jsx    # React Context for network switching
   components/
     layout/
       Sidebar.jsx
@@ -322,12 +332,16 @@ src/
 ## Troubleshooting
 
 - Faucet `429`: expected rate-limit behavior from server policy.
+- Faucet not visible: Faucet is only available on Testnet. Switch network in the sidebar.
 - Wallet connection fails:
   - verify extension is installed/unlocked
-  - ensure `VITE_RPC` is reachable in browser
+  - ensure RPC endpoint is reachable in browser
   - ensure chain/token env values are correctly set
 - Balance fetch fails:
-  - ensure `VITE_REST` includes trailing slash
+  - ensure REST endpoint includes trailing slash (testnet) or is accessible (mainnet)
+- Network switch issues:
+  - wallet disconnects automatically on switch; reconnect after switching
+  - Testnet and Mainnet share the same `chainId`; the wallet may show the name from whichever was registered first
 
 ## License
 
