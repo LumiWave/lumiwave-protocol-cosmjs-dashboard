@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 
 import { getInjectedProvider, walletCapabilities } from './wallets';
-import { CHAIN_CONFIG, TABS, WALLET_STATUS } from './config/constants';
+import { TABS, WALLET_STATUS } from './config/constants';
+import { useNetwork } from './config/NetworkContext';
 import { buildChainInfo } from './keplr';
 
 import { useWallet } from './hooks/useWallet';
@@ -36,6 +37,8 @@ import { NFTMintSection } from './components/nft/NFTMintSection';
 import { TokenFactorySection } from './components/tokenfactory/TokenFactorySection';
 
 export default function App() {
+  const { chainConfig, faucetConfig, networkType, switchNetwork, isTestnet, isMainnet } = useNetwork();
+
   const [activeTab, setActiveTab] = useState(TABS.DASHBOARD);
   const [modalOpen, setModalOpen] = useState(false);
   const [extraCurrencies, setExtraCurrencies] = useState(() => readExtraCurrenciesFromStorage());
@@ -43,21 +46,21 @@ export default function App() {
   const [syncingWalletAssets, setSyncingWalletAssets] = useState(false);
 
   // Wallet
-  const wallet = useWallet();
+  const wallet = useWallet(chainConfig);
   const { status, walletType, address, height, stargateClient, wasmClient, setStatus } = wallet;
 
   // All Balances (Native + CW20 + NFT)
-  const balances = useAllBalances();
+  const balances = useAllBalances(chainConfig);
   const { refreshAllBalances } = balances;
 
   // Faucet
-  const faucet = useFaucet();
+  const faucet = useFaucet(faucetConfig);
 
   // Bank Send
-  const bankSend = useBankSend(balances.nativeBalances, extraCurrencies);
+  const bankSend = useBankSend(balances.nativeBalances, extraCurrencies, chainConfig);
 
   // Token Factory
-  const tokenFactory = useTokenFactory(address);
+  const tokenFactory = useTokenFactory(address, chainConfig);
 
   // WASM Deploy (including CW20)
   const wasmDeploy = useWasmDeploy(address);
@@ -71,12 +74,15 @@ export default function App() {
   // Derived states
   const connected = status === WALLET_STATUS.CONNECTED || status === WALLET_STATUS.ADDRESS_COPIED;
   const canWasm = walletType ? walletCapabilities(walletType).canWasm : false;
-  const currencyIndex = useMemo(() => buildCurrencyIndex(extraCurrencies), [extraCurrencies]);
+  const currencyIndex = useMemo(
+    () => buildCurrencyIndex(extraCurrencies, chainConfig),
+    [extraCurrencies, chainConfig]
+  );
   const walletAssets = useMemo(() => {
     return balances.nativeBalances.map((balance) => {
       const denom = String(balance?.denom || '').trim();
       const currency = currencyIndex[denom];
-      const fallbackDecimals = denom === CHAIN_CONFIG.denom ? CHAIN_CONFIG.decimals : 0;
+      const fallbackDecimals = denom === chainConfig.denom ? chainConfig.decimals : 0;
 
       return {
         denom,
@@ -85,7 +91,7 @@ export default function App() {
         decimals: Number(currency?.coinDecimals ?? fallbackDecimals),
       };
     });
-  }, [balances.nativeBalances, currencyIndex]);
+  }, [balances.nativeBalances, currencyIndex, chainConfig]);
   const busy =
     status.startsWith('Suggesting') ||
     status.startsWith('Connecting') ||
@@ -101,6 +107,14 @@ export default function App() {
     nftMint.loading ||
     balances.loading;
 
+  // 네트워크 전환 시 지갑 연결 해제 및 상태 초기화
+  useEffect(() => {
+    wallet.disconnect();
+    setExtraCurrencies(readExtraCurrenciesFromStorage());
+    setActiveTab(TABS.DASHBOARD);
+    // 메인넷에서 faucet 탭이 열려 있으면 대시보드로 이동
+  }, [networkType]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Handlers
   const handleConnectWallet = async (type) => {
     setModalOpen(false);
@@ -115,7 +129,6 @@ export default function App() {
   }, [connected, address, refreshAllBalances]);
 
   // 잔고에 있는 denom 메타데이터를 조회해 지갑 통화 목록을 동기화한다.
-  // factory 토큰이 Keplr/Leap에 누락되는 상황을 줄이기 위해 체인 정보를 재제안한다.
   const syncWalletCurrenciesFromBalances = useCallback(async ({ force = false } = {}) => {
     if (!connected || !walletType) {
       return { ok: false, reason: 'wallet not connected' };
@@ -128,7 +141,7 @@ export default function App() {
 
     const nativeDenoms = balances.nativeBalances
       .map((balance) => String(balance?.denom || '').trim())
-      .filter((denom) => denom && denom !== CHAIN_CONFIG.denom);
+      .filter((denom) => denom && denom !== chainConfig.denom);
     const savedExtraCurrencies = readExtraCurrenciesFromStorage();
     let mergedExtraCurrencies = savedExtraCurrencies;
     let discoveredCount = 0;
@@ -140,7 +153,7 @@ export default function App() {
         const discoveredCurrencies = (
           await Promise.all(
             nativeDenoms.map(async (denom) => {
-              const metadata = await fetchDenomMetadata(CHAIN_CONFIG.rest, denom);
+              const metadata = await fetchDenomMetadata(chainConfig.rest, denom);
               return toCurrencyFromDenomMetadata(metadata, denom);
             })
           )
@@ -160,7 +173,7 @@ export default function App() {
         return { ok: true, changed: false, discoveredCount, syncedCount: mergedExtraCurrencies.length };
       }
 
-      const updatedChainInfo = buildChainInfo(import.meta.env, {
+      const updatedChainInfo = buildChainInfo(chainConfig, {
         extraCurrencies: mergedExtraCurrencies,
       });
       await provider.experimentalSuggestChain(updatedChainInfo);
@@ -176,14 +189,12 @@ export default function App() {
     } finally {
       setSyncingWalletAssets(false);
     }
-  }, [balances.nativeBalances, connected, walletType]);
+  }, [balances.nativeBalances, connected, walletType, chainConfig]);
 
   useEffect(() => {
     syncWalletCurrenciesFromBalances();
   }, [syncWalletCurrenciesFromBalances]);
 
-  // 지갑에 코인/토큰 메타데이터를 강제로 재동기화한다.
-  // 사용자가 버튼으로 직접 실행해 표시 누락을 즉시 보정할 수 있게 한다.
   const handleSyncWalletAssets = useCallback(async () => {
     setStatus('Syncing wallet assets...');
     const syncResult = await syncWalletCurrenciesFromBalances({ force: true });
@@ -235,8 +246,6 @@ export default function App() {
     setStatus(WALLET_STATUS.CONNECTED);
   };
 
-  // 발행한 factory denom의 메타데이터를 체인에 등록한다.
-  // 지갑에서 토큰 심볼과 소수점이 보이도록 설정한다.
   const handleSetTokenMetadata = async () => {
     setStatus('Setting token metadata...');
     const metadataTx = await tokenFactory.setMetadata(stargateClient, address, () =>
@@ -259,7 +268,7 @@ export default function App() {
       const provider = getInjectedProvider(walletType);
       if (provider?.experimentalSuggestChain) {
         setStatus('Syncing wallet token list...');
-        const updatedChainInfo = buildChainInfo(import.meta.env, {
+        const updatedChainInfo = buildChainInfo(chainConfig, {
           extraCurrencies: mergedExtraCurrencies,
         });
         await provider.experimentalSuggestChain(updatedChainInfo);
@@ -303,7 +312,6 @@ export default function App() {
     setStatus('Minting NFT...');
     await nftMint.mint(wasmClient, address);
     setStatus(WALLET_STATUS.CONNECTED);
-    // Refresh NFT collections after minting
     balances.refreshNFTCollections(wasmClient, address);
   };
 
@@ -322,6 +330,10 @@ export default function App() {
         address={address}
         connected={connected}
         canWasm={canWasm}
+        networkType={networkType}
+        onSwitchNetwork={switchNetwork}
+        chainConfig={chainConfig}
+        isTestnet={isTestnet}
       />
 
       <main className="kmain">
@@ -331,6 +343,8 @@ export default function App() {
           onCopyAddress={wallet.copyAddress}
           address={address}
           busy={busy}
+          chainConfig={chainConfig}
+          isMainnet={isMainnet}
         />
 
         {activeTab === TABS.DASHBOARD && (
@@ -342,6 +356,7 @@ export default function App() {
                 height={height}
                 nativeBalances={balances.nativeBalances}
                 balancesText={balances.formattedNativeBalances}
+                chainConfig={chainConfig}
               />
 
               <QuickActions
@@ -355,6 +370,7 @@ export default function App() {
                 sendResult={bankSend.result}
                 uploadResult={wasmDeploy.uploadResult}
                 instantiateResult={wasmDeploy.instantiateResult}
+                isTestnet={isTestnet}
               />
             </div>
 
@@ -368,7 +384,7 @@ export default function App() {
           </>
         )}
 
-        {activeTab === TABS.FAUCET && (
+        {activeTab === TABS.FAUCET && isTestnet && (
           <FaucetSection
             address={address}
             busy={busy}
@@ -377,6 +393,19 @@ export default function App() {
             onRequestFaucet={handleRequestFaucet}
             onRefreshBalances={() => balances.refreshAllBalances(address, wasmClient)}
           />
+        )}
+
+        {activeTab === TABS.FAUCET && isMainnet && (
+          <div className="kgridSingle">
+            <section className="kcard">
+              <div className="kcardHead">
+                <h3>Faucet</h3>
+              </div>
+              <div className="khelp">
+                Faucet is not available on Mainnet. Please use a DEX or obtain tokens through other means.
+              </div>
+            </section>
+          </div>
         )}
 
         {activeTab === TABS.SEND && (

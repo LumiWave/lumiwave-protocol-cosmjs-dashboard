@@ -3,9 +3,7 @@
 import { useState, useCallback } from 'react';
 import { fetchBalances } from '../services/balanceService';
 import { formatBalances } from '../utils/formatters';
-import { CHAIN_CONFIG } from '../config/constants';
-
-export function useAllBalances() {
+export function useAllBalances(chainConfig) {
   const [nativeBalances, setNativeBalances] = useState([]);
   const [cw20Balances, setCw20Balances] = useState([]);
   const [nftCollections, setNftCollections] = useState([]);
@@ -34,7 +32,7 @@ export function useAllBalances() {
     if (!address) return;
 
     try {
-      const balances = await fetchBalances(address, CHAIN_CONFIG.rest);
+      const balances = await fetchBalances(address, chainConfig.rest);
       setNativeBalances(balances);
       return balances;
     } catch (error) {
@@ -42,7 +40,7 @@ export function useAllBalances() {
       setNativeBalances([]);
       return [];
     }
-  }, []);
+  }, [chainConfig]);
 
   /**
    * Refresh CW20 token balances
@@ -120,9 +118,9 @@ export function useAllBalances() {
    */
   const formattedNativeBalances = formatBalances(
     nativeBalances,
-    CHAIN_CONFIG.denom,
-    CHAIN_CONFIG.displayDenom,
-    CHAIN_CONFIG.decimals
+    chainConfig.denom,
+    chainConfig.displayDenom,
+    chainConfig.decimals
   );
 
   return {

@@ -7,9 +7,7 @@ import {
   setTokenFactoryDenomMetadata,
 } from '../services/tokenFactoryService';
 import { displayToBaseAmount, safeStringify } from '../utils/formatters';
-import { CHAIN_CONFIG } from '../config/constants';
-
-export function useTokenFactory(address) {
+export function useTokenFactory(address, chainConfig) {
   const [subdenom, setSubdenom] = useState('');
   const [createMemo, setCreateMemo] = useState('');
   const [createdDenom, setCreatedDenom] = useState('');
@@ -26,7 +24,7 @@ export function useTokenFactory(address) {
   const [metadataSymbol, setMetadataSymbol] = useState('');
   const [metadataName, setMetadataName] = useState('');
   const [metadataDescription, setMetadataDescription] = useState('');
-  const [metadataDecimals, setMetadataDecimals] = useState(String(CHAIN_CONFIG.decimals));
+  const [metadataDecimals, setMetadataDecimals] = useState(String(chainConfig.decimals));
   const [metadataUri, setMetadataUri] = useState('');
   const [metadataMemo, setMetadataMemo] = useState('');
   const [metadataResult, setMetadataResult] = useState('');
@@ -45,7 +43,7 @@ export function useTokenFactory(address) {
         setLoading(true);
         setCreateResult('');
 
-        const result = await createTokenFactoryDenom(client, senderAddress, subdenom, createMemo);
+        const result = await createTokenFactoryDenom(client, senderAddress, subdenom, createMemo, chainConfig);
 
         setCreatedDenom(result.newDenom);
         setMintDenom(result.newDenom);
@@ -73,7 +71,7 @@ export function useTokenFactory(address) {
         setLoading(false);
       }
     },
-    [subdenom, createMemo, metadataDisplayDenom]
+    [subdenom, createMemo, metadataDisplayDenom, chainConfig]
   );
 
   const mint = useCallback(
@@ -82,21 +80,22 @@ export function useTokenFactory(address) {
         setLoading(true);
         setMintResult('');
 
-        const baseAmount = displayToBaseAmount(mintAmount, CHAIN_CONFIG.decimals);
+        const baseAmount = displayToBaseAmount(mintAmount, chainConfig.decimals);
         const result = await mintTokenFactoryDenom(
           client,
           senderAddress,
           mintDenom,
           baseAmount,
           mintToAddress,
-          mintMemo
+          mintMemo,
+          chainConfig
         );
 
         setMintResult(
           safeStringify({
             success: true,
             displayAmount: mintAmount,
-            displayDenom: CHAIN_CONFIG.displayDenom,
+            displayDenom: chainConfig.displayDenom,
             ...result,
           })
         );
@@ -116,7 +115,7 @@ export function useTokenFactory(address) {
         setLoading(false);
       }
     },
-    [mintDenom, mintAmount, mintToAddress, mintMemo]
+    [mintDenom, mintAmount, mintToAddress, mintMemo, chainConfig]
   );
 
   // 발행한 denom 메타데이터를 체인에 등록한다.
@@ -139,7 +138,8 @@ export function useTokenFactory(address) {
             decimals: Number(metadataDecimals),
             uri: metadataUri,
           },
-          metadataMemo
+          metadataMemo,
+          chainConfig
         );
 
         setMetadataResult(
@@ -175,6 +175,7 @@ export function useTokenFactory(address) {
       metadataDecimals,
       metadataUri,
       metadataMemo,
+      chainConfig,
     ]
   );
 

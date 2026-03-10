@@ -1,34 +1,12 @@
 // src/config/constants.js
+// 하위 호환: CHAIN_CONFIG / FAUCET_CONFIG는 테스트넷 기본값으로 유지.
+// 네트워크 전환 시에는 useNetwork() 훅의 chainConfig를 사용한다.
 
-const env = import.meta.env;
+import { NETWORKS, FAUCET_CONFIGS, NETWORK_TYPE } from './networks';
 
-export const CHAIN_CONFIG = {
-  chainId: env.VITE_CHAIN_ID || 'lumiwaveprotocol',
-  chainName: env.VITE_CHAIN_NAME || 'LumiWave Protocol Testnet',
-  rpc: env.VITE_RPC || '',
-  rest: env.VITE_REST || '',
-  bech32Prefix: env.VITE_BECH32_PREFIX || 'lumi',
-  denom: env.VITE_DENOM || 'ulwp',
-  displayDenom: env.VITE_DENOM_DISPLAY || 'LWP',
-  decimals: Number(env.VITE_DECIMALS || '6'),
-  gasPrice: env.VITE_GAS_PRICE || '0.025ulwp',
-  tokenFactoryCreateDenomTypeUrl:
-    env.VITE_TOKENFACTORY_CREATE_DENOM_TYPE_URL ||
-    '/osmosis.tokenfactory.v1beta1.MsgCreateDenom',
-  tokenFactoryMintTypeUrl:
-    env.VITE_TOKENFACTORY_MINT_TYPE_URL || '/osmosis.tokenfactory.v1beta1.MsgMint',
-  tokenFactorySetMetadataTypeUrl:
-    env.VITE_TOKENFACTORY_SET_METADATA_TYPE_URL ||
-    '/osmosis.tokenfactory.v1beta1.MsgSetDenomMetadata',
-  tokenFactorySetMetadataGasMultiplier: Number(
-    env.VITE_TOKENFACTORY_SET_METADATA_GAS_MULTIPLIER || '1.8'
-  ),
-};
+export const CHAIN_CONFIG = NETWORKS[NETWORK_TYPE.TESTNET];
 
-export const FAUCET_CONFIG = {
-  baseUrl: env.VITE_FAUCET || '',
-  apiPath: (env.VITE_FAUCET_API || '').replace(/\/$/, ''),
-};
+export const FAUCET_CONFIG = FAUCET_CONFIGS[NETWORK_TYPE.TESTNET];
 
 export const TABS = {
   DASHBOARD: 'dashboard',

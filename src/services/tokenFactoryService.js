@@ -1,7 +1,5 @@
 // src/services/tokenFactoryService.js
 
-import { CHAIN_CONFIG } from '../config/constants';
-
 function ensureDeliverTxSuccess(result, action) {
   if (result?.code === 0) return;
 
@@ -63,7 +61,7 @@ function buildTokenMetadata(denom, displayDenom, symbol, name, description, deci
   };
 }
 
-export async function createTokenFactoryDenom(client, senderAddress, subdenom, memo = '') {
+export async function createTokenFactoryDenom(client, senderAddress, subdenom, memo = '', chainConfig = {}) {
   if (!client) {
     throw new Error('Stargate client not initialized');
   }
@@ -83,7 +81,7 @@ export async function createTokenFactoryDenom(client, senderAddress, subdenom, m
     throw new Error('Subdenom must be 44 chars or less');
   }
 
-  const typeUrl = CHAIN_CONFIG.tokenFactoryCreateDenomTypeUrl;
+  const typeUrl = chainConfig.tokenFactoryCreateDenomTypeUrl;
   if (!typeUrl?.trim()) {
     throw new Error('Tokenfactory create-denom type URL is not configured');
   }
@@ -125,7 +123,8 @@ export async function mintTokenFactoryDenom(
   denom,
   baseAmount,
   mintToAddress = '',
-  memo = ''
+  memo = '',
+  chainConfig = {}
 ) {
   if (!client) {
     throw new Error('Stargate client not initialized');
@@ -151,7 +150,7 @@ export async function mintTokenFactoryDenom(
     throw new Error('Amount must be greater than 0');
   }
 
-  const typeUrl = CHAIN_CONFIG.tokenFactoryMintTypeUrl;
+  const typeUrl = chainConfig.tokenFactoryMintTypeUrl;
   if (!typeUrl?.trim()) {
     throw new Error('Tokenfactory mint type URL is not configured');
   }
@@ -204,7 +203,8 @@ export async function setTokenFactoryDenomMetadata(
     decimals = 6,
     uri = '',
   },
-  memo = ''
+  memo = '',
+  chainConfig = {}
 ) {
   if (!client) {
     throw new Error('Stargate client not initialized');
@@ -239,14 +239,14 @@ export async function setTokenFactoryDenomMetadata(
     (uri || '').trim()
   );
 
-  const typeUrl = CHAIN_CONFIG.tokenFactorySetMetadataTypeUrl;
+  const typeUrl = chainConfig.tokenFactorySetMetadataTypeUrl;
   if (!typeUrl?.trim()) {
     throw new Error('Tokenfactory set-metadata type URL is not configured');
   }
   const metadataGasMultiplier =
-    Number.isFinite(CHAIN_CONFIG.tokenFactorySetMetadataGasMultiplier) &&
-    CHAIN_CONFIG.tokenFactorySetMetadataGasMultiplier > 1
-      ? CHAIN_CONFIG.tokenFactorySetMetadataGasMultiplier
+    Number.isFinite(chainConfig.tokenFactorySetMetadataGasMultiplier) &&
+    chainConfig.tokenFactorySetMetadataGasMultiplier > 1
+      ? chainConfig.tokenFactorySetMetadataGasMultiplier
       : 1.8;
 
   const result = await client.signAndBroadcast(

@@ -1,10 +1,9 @@
 // src/components/dashboard/Overview.jsx
 
-import { CHAIN_CONFIG } from '../../config/constants';
 import { formatAmount } from '../../utils/formatters';
 
-export function Overview({ walletType, address, height, nativeBalances = [], balancesText }) {
-  const { chainId, displayDenom, denom, decimals, gasPrice } = CHAIN_CONFIG;
+export function Overview({ walletType, address, height, nativeBalances = [], balancesText, chainConfig }) {
+  const { chainId, displayDenom, denom, decimals, gasPrice } = chainConfig;
   const hasNativeBalances = nativeBalances.length > 0;
 
   return (

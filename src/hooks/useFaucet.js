@@ -2,9 +2,8 @@
 
 import { useState, useCallback } from 'react';
 import { requestFaucet } from '../services/faucetService';
-import { FAUCET_CONFIG } from '../config/constants';
 
-export function useFaucet() {
+export function useFaucet(faucetConfig) {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -13,7 +12,7 @@ export function useFaucet() {
       setLoading(true);
       setResult('');
 
-      const faucetApiBase = (FAUCET_CONFIG.apiPath || '').trim();
+      const faucetApiBase = (faucetConfig?.apiPath || '').trim();
       const isAbsolute = /^https?:\/\//i.test(faucetApiBase);
       const isRelative = faucetApiBase.startsWith('/');
       if (!isAbsolute && !isRelative) {
@@ -33,7 +32,7 @@ export function useFaucet() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [faucetConfig]);
 
   const clearResult = useCallback(() => {
     setResult('');

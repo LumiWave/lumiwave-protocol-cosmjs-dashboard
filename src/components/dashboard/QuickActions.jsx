@@ -13,6 +13,7 @@ export function QuickActions({
   sendResult,
   uploadResult,
   instantiateResult,
+  isTestnet,
 }) {
   return (
     <section className="kcard">
@@ -21,9 +22,15 @@ export function QuickActions({
       </div>
 
       <div className="krow2">
-        <button className="kbtn primary" onClick={onRequestFaucet} disabled={!address || busy}>
-          Request Faucet
-        </button>
+        {isTestnet ? (
+          <button className="kbtn primary" onClick={onRequestFaucet} disabled={!address || busy}>
+            Request Faucet
+          </button>
+        ) : (
+          <button className="kbtn" disabled style={{ opacity: 0.5 }}>
+            Faucet (Testnet only)
+          </button>
+        )}
         <button className="kbtn" onClick={() => setActive(TABS.SEND)} disabled={!address}>
           Bank Send
         </button>

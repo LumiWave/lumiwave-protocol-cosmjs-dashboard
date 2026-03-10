@@ -1,13 +1,16 @@
 // src/components/layout/TopBar.jsx
 
-import { CHAIN_CONFIG } from '../../config/constants';
 import { Button } from '../ui/Button';
 
-export function TopBar({ status, onConnectWallet, onCopyAddress, address, busy }) {
+export function TopBar({ status, onConnectWallet, onCopyAddress, address, busy, chainConfig, isMainnet }) {
   return (
     <div className="ktop">
       <div className="ktopLeft">
-        <div className="ktopTitle">{CHAIN_CONFIG.chainName} Dashboard</div>
+        <div className="ktopTitle">
+          {chainConfig.chainName} Dashboard
+          {isMainnet && <span className="knetBadge mainnet">MAINNET</span>}
+          {!isMainnet && <span className="knetBadge testnet">TESTNET</span>}
+        </div>
         <div className="ktopSub">
           Wallet connection, faucet, transfers, and CosmWasm deployment.
         </div>

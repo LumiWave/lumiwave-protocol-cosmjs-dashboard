@@ -3,10 +3,10 @@
 import { useState, useCallback } from 'react';
 import { buildChainInfo } from '../keplr';
 import { initializeWallet } from '../services/walletService';
-import { CHAIN_CONFIG, WALLET_STATUS } from '../config/constants';
+import { WALLET_STATUS } from '../config/constants';
 import { readExtraCurrenciesFromStorage } from '../utils/currencies';
 
-export function useWallet() {
+export function useWallet(chainConfig) {
   const [status, setStatus] = useState(WALLET_STATUS.DISCONNECTED);
   const [walletType, setWalletType] = useState(null);
   const [address, setAddress] = useState('');
@@ -19,16 +19,16 @@ export function useWallet() {
       setStatus(WALLET_STATUS.CONNECTING);
 
       const savedExtraCurrencies = readExtraCurrenciesFromStorage();
-      const chainInfo = buildChainInfo(import.meta.env, {
+      const chainInfo = buildChainInfo(chainConfig, {
         extraCurrencies: savedExtraCurrencies,
       });
 
       setStatus(WALLET_STATUS.SUGGESTING);
 
-      const result = await initializeWallet(wallet, chainInfo, CHAIN_CONFIG.gasPrice, {
-        createDenomTypeUrl: CHAIN_CONFIG.tokenFactoryCreateDenomTypeUrl,
-        mintTypeUrl: CHAIN_CONFIG.tokenFactoryMintTypeUrl,
-        setMetadataTypeUrl: CHAIN_CONFIG.tokenFactorySetMetadataTypeUrl,
+      const result = await initializeWallet(wallet, chainInfo, chainConfig.gasPrice, {
+        createDenomTypeUrl: chainConfig.tokenFactoryCreateDenomTypeUrl,
+        mintTypeUrl: chainConfig.tokenFactoryMintTypeUrl,
+        setMetadataTypeUrl: chainConfig.tokenFactorySetMetadataTypeUrl,
       });
 
       setWalletType(wallet);
@@ -45,7 +45,7 @@ export function useWallet() {
       setStatus(error?.message || 'Connection failed');
       throw error;
     }
-  }, []);
+  }, [chainConfig]);
 
   const disconnect = useCallback(() => {
     setWalletType(null);

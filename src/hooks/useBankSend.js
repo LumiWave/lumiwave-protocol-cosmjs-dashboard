@@ -3,18 +3,17 @@
 import { useState, useCallback, useEffect } from 'react';
 import { sendTokens } from '../services/bankService';
 import { displayToBaseAmount, safeStringify } from '../utils/formatters';
-import { CHAIN_CONFIG } from '../config/constants';
 import { buildCurrencyIndex } from '../utils/currencies';
 
-export function useBankSend(nativeBalances = [], extraCurrencies = []) {
+export function useBankSend(nativeBalances = [], extraCurrencies = [], chainConfig) {
   const [toAddress, setToAddress] = useState('');
   const [amount, setAmount] = useState('1');
-  const [selectedDenom, setSelectedDenom] = useState(CHAIN_CONFIG.denom);
+  const [selectedDenom, setSelectedDenom] = useState(chainConfig.denom);
   const [memo, setMemo] = useState('');
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const currencyIndex = buildCurrencyIndex(extraCurrencies);
+  const currencyIndex = buildCurrencyIndex(extraCurrencies, chainConfig);
 
   const denomSet = new Set();
   const coinOptions = [];
@@ -27,35 +26,35 @@ export function useBankSend(nativeBalances = [], extraCurrencies = []) {
     coinOptions.push({
       denom,
       displayDenom: currency?.coinDenom || denom,
-      decimals: Number(currency?.coinDecimals ?? CHAIN_CONFIG.decimals),
+      decimals: Number(currency?.coinDecimals ?? chainConfig.decimals),
     });
   }
 
-  if (!denomSet.has(CHAIN_CONFIG.denom)) {
+  if (!denomSet.has(chainConfig.denom)) {
     coinOptions.unshift({
-      denom: CHAIN_CONFIG.denom,
-      displayDenom: CHAIN_CONFIG.displayDenom,
-      decimals: CHAIN_CONFIG.decimals,
+      denom: chainConfig.denom,
+      displayDenom: chainConfig.displayDenom,
+      decimals: chainConfig.decimals,
     });
   }
 
   const selectedCoin =
     coinOptions.find((option) => option.denom === selectedDenom) || {
-      denom: CHAIN_CONFIG.denom,
-      displayDenom: CHAIN_CONFIG.displayDenom,
-      decimals: CHAIN_CONFIG.decimals,
+      denom: chainConfig.denom,
+      displayDenom: chainConfig.displayDenom,
+      decimals: chainConfig.decimals,
     };
 
   useEffect(() => {
     const hasSelectedBalance = nativeBalances.some(
       (balance) => String(balance?.denom || '').trim() === selectedDenom
     );
-    if (hasSelectedBalance || selectedDenom === CHAIN_CONFIG.denom) {
+    if (hasSelectedBalance || selectedDenom === chainConfig.denom) {
       return;
     }
 
     const firstBalanceDenom = String(nativeBalances[0]?.denom || '').trim();
-    setSelectedDenom(firstBalanceDenom || CHAIN_CONFIG.denom);
+    setSelectedDenom(firstBalanceDenom || chainConfig.denom);
   }, [nativeBalances, selectedDenom]);
 
   const send = useCallback(async (client, fromAddress, onSuccess) => {

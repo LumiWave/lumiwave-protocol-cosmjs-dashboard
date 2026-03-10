@@ -1,9 +1,12 @@
-export function buildChainInfo(env, options = {}) {
-  const prefix = env.VITE_BECH32_PREFIX;
+// chainConfig: networks.js 형식 또는 VITE_* env 형식 모두 지원
+export function buildChainInfo(cfg, options = {}) {
+  // networks.js 형식이면 직접 사용, env 형식이면 변환
+  const isNetworkConfig = !!cfg.bech32Prefix;
+  const prefix = isNetworkConfig ? cfg.bech32Prefix : cfg.VITE_BECH32_PREFIX;
   const baseCurrency = {
-    coinDenom: env.VITE_DENOM_DISPLAY,
-    coinMinimalDenom: env.VITE_DENOM,
-    coinDecimals: Number(env.VITE_DECIMALS),
+    coinDenom: isNetworkConfig ? cfg.displayDenom : cfg.VITE_DENOM_DISPLAY,
+    coinMinimalDenom: isNetworkConfig ? cfg.denom : cfg.VITE_DENOM,
+    coinDecimals: Number(isNetworkConfig ? cfg.decimals : cfg.VITE_DECIMALS),
   };
   const extraCurrencies = Array.isArray(options.extraCurrencies) ? options.extraCurrencies : [];
   const currencies = [baseCurrency];
@@ -31,10 +34,10 @@ export function buildChainInfo(env, options = {}) {
   }
 
   return {
-    chainId: env.VITE_CHAIN_ID,
-    chainName: env.VITE_CHAIN_NAME,
-    rpc: env.VITE_RPC,
-    rest: env.VITE_REST,
+    chainId: isNetworkConfig ? cfg.chainId : cfg.VITE_CHAIN_ID,
+    chainName: isNetworkConfig ? cfg.chainName : cfg.VITE_CHAIN_NAME,
+    rpc: isNetworkConfig ? cfg.rpc : cfg.VITE_RPC,
+    rest: isNetworkConfig ? cfg.rest : cfg.VITE_REST,
 
     bip44: { coinType: 118 },
 
@@ -55,7 +58,6 @@ export function buildChainInfo(env, options = {}) {
 
     gasPriceStep: { low: 0.01, average: 0.025, high: 0.04 },
 
-    // Important for CosmWasm tx support
     features: ["cosmwasm"],
   };
 }

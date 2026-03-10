@@ -1,14 +1,37 @@
 // src/components/layout/Sidebar.jsx
 
 import { shortenAddress } from '../../utils/formatters';
-import { CHAIN_CONFIG, TABS } from '../../config/constants';
+import { TABS } from '../../config/constants';
+import { NETWORK_TYPE } from '../../config/networks';
 
-export function Sidebar({ active, setActive, walletType, address, connected, canWasm }) {
+export function Sidebar({
+  active,
+  setActive,
+  walletType,
+  address,
+  connected,
+  canWasm,
+  networkType,
+  onSwitchNetwork,
+  chainConfig,
+  isTestnet,
+}) {
   return (
     <aside className="kside">
       <div className="kbrand">
         <div className="kbrandTitle">LumiWave Protocol</div>
-        <div className="kbrandSub">Testnet Tools</div>
+        <div className="kbrandSub">{chainConfig.chainName}</div>
+      </div>
+
+      <div className="knetworkSwitch">
+        <select
+          className="knetworkSelect"
+          value={networkType}
+          onChange={(e) => onSwitchNetwork(e.target.value)}
+        >
+          <option value={NETWORK_TYPE.TESTNET}>Testnet</option>
+          <option value={NETWORK_TYPE.MAINNET}>Mainnet</option>
+        </select>
       </div>
 
       <div className="kprofile">
@@ -26,12 +49,14 @@ export function Sidebar({ active, setActive, walletType, address, connected, can
         >
           Dashboard
         </button>
-        <button
-          className={`knavItem ${active === TABS.FAUCET ? 'active' : ''}`}
-          onClick={() => setActive(TABS.FAUCET)}
-        >
-          Faucet
-        </button>
+        {isTestnet && (
+          <button
+            className={`knavItem ${active === TABS.FAUCET ? 'active' : ''}`}
+            onClick={() => setActive(TABS.FAUCET)}
+          >
+            Faucet
+          </button>
+        )}
         <button
           className={`knavItem ${active === TABS.SEND ? 'active' : ''}`}
           onClick={() => setActive(TABS.SEND)}
@@ -77,11 +102,11 @@ export function Sidebar({ active, setActive, walletType, address, connected, can
         </div>
         <div className="kmetaRow">
           <span>RPC</span>
-          <span className="kmono">{CHAIN_CONFIG.rpc}</span>
+          <span className="kmono">{chainConfig.rpc}</span>
         </div>
         <div className="kmetaRow">
           <span>REST</span>
-          <span className="kmono">{CHAIN_CONFIG.rest}</span>
+          <span className="kmono">{chainConfig.rest}</span>
         </div>
       </div>
     </aside>
