@@ -10,7 +10,7 @@ export const NETWORK_TYPE = {
 
 const TESTNET_CONFIG = {
   networkType: NETWORK_TYPE.TESTNET,
-  chainId: env.VITE_CHAIN_ID || 'lumiwaveprotocol',
+  chainId: env.VITE_CHAIN_ID || 'lumiwaveprotocol-testnet',
   chainName: env.VITE_CHAIN_NAME || 'LumiWave Protocol Testnet',
   rpc: env.VITE_RPC || 'https://lwp-testnet.lumiwavelab.com/tendermint/',
   rest: env.VITE_REST || 'https://lwp-testnet.lumiwavelab.com/',

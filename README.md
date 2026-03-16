@@ -69,7 +69,7 @@ Priority in dev mode:
 ### Local Development (`.env`)
 
 ```env
-VITE_CHAIN_ID=lumiwaveprotocol
+VITE_CHAIN_ID=lumiwaveprotocol-testnet
 VITE_CHAIN_NAME=LumiWave Protocol Testnet
 
 # Endpoints (used as testnet defaults)
@@ -96,7 +96,7 @@ VITE_FAUCET_API=/api/faucet
 ### Production (`.env.production`) Example
 
 ```env
-VITE_CHAIN_ID=lumiwaveprotocol
+VITE_CHAIN_ID=lumiwaveprotocol-testnet
 VITE_CHAIN_NAME=LumiWave Protocol Testnet
 VITE_RPC=https://lwp-testnet.lumiwavelab.com/tendermint/
 VITE_REST=https://lwp-testnet.lumiwavelab.com/
